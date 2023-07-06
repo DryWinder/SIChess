@@ -1,0 +1,31 @@
+1. When dragging piece it shifts this piece one square up and left
+For example: piece on e4 -> d3
+2. Sometimes it can move 2+ pieces in move, instead of 1.
+
+--- This bugs are solved! :) ---
+
+3. If mouse while dragging gets out of layeredPane there can be Null exception
+
+4. Make all поля private - done
+
+md format
+
+make hashmap for exceptions in main
+
+кінцевий автомат(state machine)
+
+logs instead of prints
+
+few public methods in classes, many private if there is a need
+
+make separate method for every if-condition
+
+Constructor cannot throw Exceptions
+
+
+Logic for a piece move:
+
+1. Drag piece to selected square
+2. If selected square is not valid to move this piece - return to previousSquare, and move again
+3. Else - set new Location to this piece
+
