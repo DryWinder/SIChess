@@ -37,7 +37,7 @@ public class King extends PieceAbstract{
 
     @Override
     public boolean isValidKill() {
-        return false;
+        return this.newSquare.isTherePiece() && this.newSquare.getPieceColor() != this.getColor();
     }
 
 
@@ -45,6 +45,11 @@ public class King extends PieceAbstract{
     @Override
     public void isThereHiddenCheck() {
 
+    }
+
+    @Override
+    public boolean getPawnsMoveHistory() {
+        return false;
     }
 
 }

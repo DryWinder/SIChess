@@ -49,5 +49,10 @@ public class Bishop extends PieceAbstract{
 
     }
 
+    @Override
+    public boolean getPawnsMoveHistory() {
+        return false;
+    }
+
 }
 

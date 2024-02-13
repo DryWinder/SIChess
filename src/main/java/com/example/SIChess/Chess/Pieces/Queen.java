@@ -18,6 +18,7 @@ public class Queen extends PieceAbstract{
 
     }
 
+    // TODO: Piece Should Never Walk Past Other Figures On Its Way
     @Override
     public void validPath(Square startSquare, Square endSquare) {
 
@@ -48,6 +49,11 @@ public class Queen extends PieceAbstract{
     @Override
     public void isThereHiddenCheck() {
 
+    }
+
+    @Override
+    public boolean getPawnsMoveHistory() {
+        return false;
     }
 
 }

@@ -31,6 +31,17 @@ public class Square extends JPanel {
         this.setBounds(getX(), getY(), 64,64);
     }
 
+    public void setNewColor(){
+        this.setBackground(java.awt.Color.green);
+    }
+
+    public void setOriginalColor(){
+        if (getColor() == Color.WHITE) {
+            this.setBackground(new java.awt.Color(235, 235, 208));
+        } else {
+            this.setBackground(new java.awt.Color(119, 148, 85));
+        }
+    }
 
 
     public Square(){}
@@ -63,6 +74,7 @@ public class Square extends JPanel {
     }
 
     public void nowThereIsNoPiece(){
+        this.piece = null;
         isTherePiece = false;
     }
 

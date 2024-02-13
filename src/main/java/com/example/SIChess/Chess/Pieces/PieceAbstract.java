@@ -5,7 +5,10 @@ import com.example.SIChess.Chess.Color;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
+import static java.lang.Math.abs;
 
 
 public abstract class PieceAbstract extends JLabel {
@@ -20,9 +23,12 @@ public abstract class PieceAbstract extends JLabel {
     private int oldY;
     private Integer xCoordinate;
     private Integer yCoordinate;
+    public int lastTimeMoved;
 
     Square newSquare;
     private boolean hasMoved;
+
+    private List<Square> lastMovePath = new ArrayList<>();
 
 
     public PieceAbstract(Color color, PieceType pieceType, Square square){
@@ -50,6 +56,8 @@ public abstract class PieceAbstract extends JLabel {
         return false;
     }
 
+
+
     public void setPreviousSquare(Square previousSquare) {
         this.previousSquare = previousSquare;
     }
@@ -61,6 +69,7 @@ public abstract class PieceAbstract extends JLabel {
     public Square getActualSquare() {
         return actualSquare;
     }
+
 
     public void pieceMoved(){
         this.hasMoved = true;
@@ -80,6 +89,10 @@ public abstract class PieceAbstract extends JLabel {
 
     public void setActualSquare(Square square){
         this.actualSquare = square;
+    }
+
+    public void setNewSquare(Square square){
+        this.newSquare = square;
     }
 
     public Color getColor(){
@@ -109,6 +122,8 @@ public abstract class PieceAbstract extends JLabel {
     public abstract boolean isValidKill();
 
     public abstract void isThereHiddenCheck();
+
+    public abstract boolean getPawnsMoveHistory();
 
 
     private String pathBuilder(Color color){

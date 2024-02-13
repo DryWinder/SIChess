@@ -6,6 +6,8 @@ import com.example.SIChess.Chess.Color;
 import static java.lang.Math.abs;
 
 public class Pawn extends PieceAbstract{
+
+    boolean justMovedTwoSquaresForward = false;
      public Pawn(Color color, PieceType PAWN, Square square){
         super(color, PAWN, square);
     }
@@ -13,6 +15,11 @@ public class Pawn extends PieceAbstract{
     private int numberOfSquaresForPawnToPass(){
         if(!hasMoved()){return 2;}
         else {return 1;}
+    }
+
+    @Override
+    public boolean getPawnsMoveHistory(){
+         return justMovedTwoSquaresForward;
     }
 
     private boolean isPawnOnRightFile(){
@@ -30,19 +37,38 @@ public class Pawn extends PieceAbstract{
     private boolean isWhitePawnMovingRightNumberOfSquaresForward(int numberOfSquaresThatPawnCanPass){
         return this.previousSquare.getRow() - this.newSquare.getRow() <= numberOfSquaresThatPawnCanPass;
     }
+    private boolean isWhitePawnMovingOneSquareForward(){
+        return this.previousSquare.getRow() - this.newSquare.getRow() == 1;
+    }
 
     private boolean isBlackPawnMovingRightNumberOfSquaresForward(int numberOfSquaresThatPawnCanPass){
         return this.newSquare.getRow() - this.previousSquare.getRow() <= numberOfSquaresThatPawnCanPass;
     }
 
+    private boolean isBlackPawnMovingOneSquareForward(){
+        return this.newSquare.getRow() - this.previousSquare.getRow() == 1;
+    }
+
     public boolean isValidMove() {
+         boolean isValid = false;
          int numberOfSquaresThatPawnCanPass = numberOfSquaresForPawnToPass();
          if (isWhite()){
-             return isPawnOnRightFile() && isWhitePawnMovingForward() && isWhitePawnMovingRightNumberOfSquaresForward(numberOfSquaresThatPawnCanPass);
+             isValid = isPawnOnRightFile() && isWhitePawnMovingForward() && isWhitePawnMovingRightNumberOfSquaresForward(numberOfSquaresThatPawnCanPass);
          }
          else{
-             return isPawnOnRightFile() && isBlackPawnMovingForward() && isBlackPawnMovingRightNumberOfSquaresForward(numberOfSquaresThatPawnCanPass);
+             isValid = isPawnOnRightFile() && isBlackPawnMovingForward() && isBlackPawnMovingRightNumberOfSquaresForward(numberOfSquaresThatPawnCanPass);
          }
+
+         if(isValid && numberOfSquaresThatPawnCanPass == 2){
+             this.justMovedTwoSquaresForward = true;
+         }
+         else {
+             this.justMovedTwoSquaresForward = false;
+         }
+         /*if(isValidKill()){
+             isValid = true;
+         }*/
+         return isValid;
     }
 
     public boolean isEnemyPieceOnRightFile(){
@@ -51,13 +77,14 @@ public class Pawn extends PieceAbstract{
 
     public boolean isValidKill(){
          if(isWhite()){
-             return isEnemyPieceOnRightFile() && isWhitePawnMovingForward() && this.newSquare.isTherePiece() && !this.newSquare.isPieceWhite();
+             return isEnemyPieceOnRightFile() && isWhitePawnMovingForward() && this.newSquare.isTherePiece() && !this.newSquare.isPieceWhite() && isWhitePawnMovingOneSquareForward();
          }
          if(isBlack()){
-             return isEnemyPieceOnRightFile() && isBlackPawnMovingForward() && this.newSquare.isTherePiece() && this.newSquare.isPieceWhite();
+             return isEnemyPieceOnRightFile() && isBlackPawnMovingForward() && this.newSquare.isTherePiece() && this.newSquare.isPieceWhite() && isBlackPawnMovingOneSquareForward();
          }
          return false;
     }
+
 
     @Override
     public void drawPath(Square startSquare, Square endSquare) {

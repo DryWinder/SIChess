@@ -24,8 +24,6 @@ public class Rook extends PieceAbstract{
     }
 
     private boolean isRookOnRightSquare(){
-        System.out.println(abs(this.newSquare.getFile().getValue() - this.previousSquare.getFile().getValue()));
-        System.out.println(abs(this.newSquare.getRow() - this.previousSquare.getRow()));
         return ((abs(this.newSquare.getFile().getValue() - this.previousSquare.getFile().getValue()) == 0) && abs(this.newSquare.getRow() - this.previousSquare.getRow()) > 0)|| (abs(this.newSquare.getFile().getValue() - this.previousSquare.getFile().getValue()) > 0 && abs(this.newSquare.getRow() - this.previousSquare.getRow()) == 0);
     }
 
@@ -45,6 +43,11 @@ public class Rook extends PieceAbstract{
     @Override
     public void isThereHiddenCheck() {
 
+    }
+
+    @Override
+    public boolean getPawnsMoveHistory() {
+        return false;
     }
 
 
