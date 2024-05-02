@@ -11,6 +11,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static java.lang.Math.abs;
 
@@ -41,12 +42,21 @@ public class Board extends JFrame {
 
     private ArrayList<PieceAbstract> piecesThatCheck;
 
+    private JLabel player1Label;
+    private JLabel player2Label;
+    private int xCoordinateToDrawTakenPiecePlayer2 = 140;
+    private int xCoordinateToDrawTakenPiecePlayer1 = 140;
+    private int yCoordinateToDrawTakenPiecePlayer2 = 10;
+    private int yCoordinateToDrawTakenPiecePlayer1 = 565;
+
+
+
 
     public Board(){
 
         layeredPane = new JLayeredPane();
         //TODO: Pane size must be equal to chess board size
-        layeredPane.setBounds(xLocation, yLocation, 576, 576);//576
+        layeredPane.setBounds(xLocation, yLocation, 576, 600);//576
         //layeredPane.setBorder(BorderFactory.createLineBorder(java.awt.Color.black));
         this.squares = new ArrayList<Square>();
         this.pieces = new ArrayList<PieceAbstract>();
@@ -56,6 +66,27 @@ public class Board extends JFrame {
         //this.setUndecorated(true);5555
         this.setBounds(250, 50, 750, 750);
         this.add(layeredPane);
+
+        player2Label = new JLabel("Player 2");
+        player2Label.setBounds(50, 10, 100, 40); // Adjust the location and size as needed
+        player1Label = new JLabel("Player 1");
+        player1Label.setBounds(50, 560, 100, 40); // Adjust the location and size as needed
+        layeredPane.add(player2Label);
+        layeredPane.add(player1Label);
+
+        // Load icons for taken pieces
+        ImageIcon takenPieceIcon2 = new ImageIcon("C:\\Users\\Windows\\Desktop\\Tree\\Studying\\Java Folders\\SIChess\\src\\main\\resources\\Icons\\WhiteBishop.png"); // Adjust the path as needed
+        ImageIcon takenPieceIcon1 = new ImageIcon("C:\\Users\\Windows\\Desktop\\Tree\\Studying\\Java Folders\\SIChess\\src\\main\\resources\\Icons\\BlackBishop.png"); // Adjust the path as needed
+
+        // Scale the icons to desired size
+        Image scaledIcon2 = takenPieceIcon1.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        Image scaledIcon1 = takenPieceIcon2.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        takenPieceIcon2 = new ImageIcon(scaledIcon1);
+        takenPieceIcon1 = new ImageIcon(scaledIcon2);
+
+        // Set icons for the labels
+        player1Label.setIcon(takenPieceIcon2);
+        player2Label.setIcon(takenPieceIcon1);
 
         this.setVisible(true);
         this.squares = createSquares();
@@ -123,10 +154,10 @@ public class Board extends JFrame {
             @Override
             public void mouseDragged(MouseEvent e) {
                 if (isSelectedPieceNull(selectedPiece)) return;
-                System.out.println("Possible moves for " + selectedPiece.getPieceType());
+                //System.out.println("Possible moves for " + selectedPiece.getPieceType());
                 validPath = validPath(selectedPiece);
                 for (Square square : validPath){
-                    System.out.println(square.getFile() + " " + square.getRow());
+                    //System.out.println(square.getFile() + " " + square.getRow());
                     square.setNewColor();
                 }
                 if (approveToMove) {
@@ -182,12 +213,86 @@ public class Board extends JFrame {
 
                 validPath(selectedPiece);
 
+                //promotePawn(selectedPiece.getColor());
+
                 System.out.println("Check = " + isCheck);
 
                 selectedPiece = null;
 
+
             }
         });
+    }
+
+    private void promotePawn(Color color){
+        JFrame promotionFrame = new JFrame();
+        promotionFrame.setLayout(null);
+        promotionFrame.setTitle("Chess");
+        promotionFrame.setBounds(500, 400, 420, 150);
+        promotionFrame.setVisible(true);
+
+        String colorName;
+        ArrayList<String> piecesName = new ArrayList<>(Arrays.asList("Bishop.png", "Knight.png", "Rook.png", "Queen.png"));
+        if(color == Color.BLACK){
+            colorName = "Black";
+        }
+        else {
+            colorName = "White";
+        }
+
+        String pathToIcon = "C:\\Users\\Windows\\Desktop\\Tree\\Studying\\Java Folders\\SIChess\\src\\main\\resources\\Icons\\" + colorName;
+        ArrayList<JButton> buttons = new ArrayList<>();
+
+        Square square = selectedPiece.getActualSquare();
+        for(String pieceName : piecesName){
+            ImageIcon icon = new ImageIcon(pathToIcon + pieceName);
+
+            JButton button = new JButton(icon);
+            button.setSize(100, 100);
+
+            button.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (pieceName.equalsIgnoreCase("Rook.png")) {
+                        kill(square, selectedPiece, 1);
+                        Rook rook = new Rook(color, PieceType.ROOK, square);
+                        drawPiece(rook, square);
+                    }
+                    if (pieceName.equalsIgnoreCase("Bishop.png")) {
+                        kill(square, selectedPiece, 1);
+                        Bishop bishop = new Bishop(color, PieceType.BISHOP, square);
+                        drawPiece(bishop, square);
+                    }
+                    if (pieceName.equalsIgnoreCase("Queen.png")) {
+                        kill(square, selectedPiece, 1);
+                        Queen queen = new Queen(color, PieceType.QUEEN, square);
+                        drawPiece(queen, square);
+                    }
+                    if (pieceName.equalsIgnoreCase("Knight.png")) {
+                        kill(square, selectedPiece, 1);
+                        Knight knight = new Knight(color, PieceType.KNIGHT, square);
+                        drawPiece(knight, square);
+                    }
+                }
+            });
+
+            buttons.add(button);
+        }
+
+        int x = 0;
+        int y = 12;
+        for(JButton button : buttons){
+            promotionFrame.getContentPane().add(button);
+            button.setBounds(x, y ,100, 100);
+            x += 100;
+        }
+    }
+
+    private void drawPiece(PieceAbstract pieceAbstract, Square square){
+        pieces.add(pieceAbstract);
+        square.setPiece(pieceAbstract);
+        square.nowHasPiece();
+        layeredPane.add(pieceAbstract, JLayeredPane.DRAG_LAYER);
     }
 
     public void capturePiece(PieceAbstract piece) {
@@ -355,7 +460,7 @@ public class Board extends JFrame {
             for (Square square : this.squares){
                 if(selectedPiece.getPreviousSquare().getRow() == square.getRow() && (selectedPiece.getPreviousSquare().getFile().getValue() == square.getFile().getValue() - 1 || selectedPiece.getPreviousSquare().getFile().getValue() == square.getFile().getValue() + 1)){
                     if(square.getPiece() != null){
-                        if(square.getPiece().getPieceType() == PieceType.PAWN && square.getPiece().getColor() != selectedPiece.getColor() && square.getPiece().getPawnsMoveHistory()){
+                        if(square.getPiece().getPieceType() == PieceType.PAWN && square.getPiece().getColor() != selectedPiece.getColor() && square.getPiece().getNumberPieceHasMoved() == 2){
                             if(square.getPiece().getColor() == Color.WHITE && square.getPiece().lastTimeMoved == this.numberOfWhiteMoves){
                                 this.enPassantSquare = square;
                                 return true;
@@ -449,16 +554,42 @@ public class Board extends JFrame {
     }
 
 
-    public void kill(Square newSquare, PieceAbstract selectedPiece){
+    public void kill(Square newSquare, PieceAbstract selectedPiece, int state){
         pieceToBeKilled = newSquare.getPiece();
         //newSquare.setPiece(selectedPiece);
         layeredPane.remove(pieceToBeKilled);
         pieces.remove(pieceToBeKilled);
+        int X, Y;
+        if(pieceToBeKilled.getColor() == Color.BLACK){
+            X = xCoordinateToDrawTakenPiecePlayer1;
+            Y = yCoordinateToDrawTakenPiecePlayer1;
+        }
+        else {
+            X = xCoordinateToDrawTakenPiecePlayer2;
+            Y = yCoordinateToDrawTakenPiecePlayer2;
+        }
+        if(state == 0) {
+            drawTakenPieces(pieceToBeKilled, X, Y);
+        }
 
     }
 
     public void move(Square newSquare, PieceAbstract selectedPiece){
+
+        if(selectedPiece.pieceType == PieceType.PAWN){
+            if(abs(selectedPiece.getNewSquare().getRow() - selectedPiece.getPreviousSquare().getRow()) == 2){
+                selectedPiece.setNumberPieceHasMoved(2);
+            }
+            else{
+                selectedPiece.setNumberPieceHasMoved(1);
+            }
+            if(selectedPiece.getNumberPieceHasMoved() == 6){
+                promotePawn(selectedPiece.getColor());
+            }
+        }
+
         newSquare.setPiece(selectedPiece);
+        newSquare.nowHasPiece();
         selectedPiece.setActualSquare(newSquare);
         selectedPiece.getActualSquare().nowHasPiece();
         selectedPiece.getActualSquare().thePieceIsWhite(selectedPiece.isWhite());
@@ -477,6 +608,9 @@ public class Board extends JFrame {
             whiteMoved = false;
             this.numberOfBlackMoves += 1;
         }
+
+
+
     }
 
     public void setCountOfMoves(PieceAbstract selectedPiece){
@@ -495,6 +629,7 @@ public class Board extends JFrame {
     }
 
     public void finalMove(Square newSquare){
+        System.out.println("En Passant " + isEnPassant(selectedPiece));
         //TODO: IF CHECK == TRUE
         if(selectedPiece.getPieceType() == PieceType.KING && isCastle(selectedPiece, newSquare)){
             System.out.println("Castle " + isCastle(selectedPiece, newSquare));
@@ -512,11 +647,12 @@ public class Board extends JFrame {
 
             else{
                 if(selectedPiece.isValidKill() && isValidPath(selectedPiece)){
-                    kill(newSquare, selectedPiece);
+                    kill(newSquare, selectedPiece, 0);
                     move(newSquare, selectedPiece);
                     setCountOfMoves(selectedPiece);
                 }
                 else{
+                    System.out.println("Not valid kill");
                     returnToPreviousSquare(selectedPiece);
                 }
             }
@@ -528,10 +664,11 @@ public class Board extends JFrame {
                 if (newSquare == enPassant(selectedPiece)){
                     for(Square square : this.squares) {
                         if (square.getFile().getValue() == this.enPassantSquare.getFile().getValue() && square.getRow() == this.enPassantSquare.getRow()) {
-                            kill(square, selectedPiece);
+                            kill(square, selectedPiece, 0);
                             square.nowThereIsNoPiece();
                         }
                     }
+
                     move(newSquare, selectedPiece);
                     setCountOfMoves(selectedPiece);
                 }
@@ -554,6 +691,8 @@ public class Board extends JFrame {
 
         System.out.println("Count of White moves: " + this.numberOfWhiteMoves);
         System.out.println("Count of Black moves: " + this.numberOfBlackMoves);
+        System.out.println("Count of This Pawn moves: " + selectedPiece.getNumberPieceHasMoved());
+
     }
 
     public boolean checkValidation(Square square, PieceAbstract selectedPiece){
@@ -627,6 +766,26 @@ public class Board extends JFrame {
         }
         selectedPiece.setNewSquare(defaultNewSquare);
         return possibleSquareToMoveIn;
+    }
+
+    private void drawTakenPieces(PieceAbstract pieceAbstract, int X, int Y){
+
+        JLabel player1TakenPiece = new JLabel();
+        ImageIcon takenPieceIcon1 = new ImageIcon(pieceAbstract.getPath());
+
+        Image scaledIcon2 = takenPieceIcon1.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        takenPieceIcon1 = new ImageIcon(scaledIcon2);
+
+        player1TakenPiece.setIcon(takenPieceIcon1);
+        player1TakenPiece.setBounds(X, Y, 30, 30);
+
+        layeredPane.add(player1TakenPiece);
+        if(pieceAbstract.getColor() == Color.BLACK){
+            xCoordinateToDrawTakenPiecePlayer1 += 30;
+        }
+        else {
+            this.xCoordinateToDrawTakenPiecePlayer2 += 30;
+        }
     }
 
     private boolean isCheck(){

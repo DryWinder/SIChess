@@ -48,6 +48,14 @@ public class Knight extends PieceAbstract{
         return false;
     }
 
+    @Override
+    public void setNumberPieceHasMoved(int number){
+
+    }
+
+    @Override
+    public int getNumberPieceHasMoved(){return 0;}
+
 
 }
 

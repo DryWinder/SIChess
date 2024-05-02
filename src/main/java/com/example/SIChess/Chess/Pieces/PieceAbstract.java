@@ -31,6 +31,8 @@ public abstract class PieceAbstract extends JLabel {
     private List<Square> lastMovePath = new ArrayList<>();
 
 
+
+
     public PieceAbstract(Color color, PieceType pieceType, Square square){
         this.color = color;
         this.pieceType = pieceType;
@@ -44,6 +46,13 @@ public abstract class PieceAbstract extends JLabel {
 
         this.setBounds(getX(), getY(), 64,64);
 
+    }
+
+    public abstract void setNumberPieceHasMoved(int number);
+    public abstract int getNumberPieceHasMoved();
+
+    public String getPath(){
+        return this.path;
     }
 
     public void paintComponent(Graphics g){

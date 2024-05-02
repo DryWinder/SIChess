@@ -8,13 +8,32 @@ import static java.lang.Math.abs;
 public class Pawn extends PieceAbstract{
 
     boolean justMovedTwoSquaresForward = false;
+    int numberOfSquaresPawnHasMoved = 0;
      public Pawn(Color color, PieceType PAWN, Square square){
         super(color, PAWN, square);
     }
 
+
     private int numberOfSquaresForPawnToPass(){
         if(!hasMoved()){return 2;}
         else {return 1;}
+    }
+
+
+    @Override
+    public void setNumberPieceHasMoved(int number){
+        numberOfSquaresPawnHasMoved += number;
+        if(number == 2){
+            this.justMovedTwoSquaresForward = true;
+        }
+        else {
+            this.justMovedTwoSquaresForward = false;
+        }
+    }
+
+    @Override
+    public int getNumberPieceHasMoved(){
+        return numberOfSquaresPawnHasMoved;
     }
 
     @Override
@@ -61,6 +80,7 @@ public class Pawn extends PieceAbstract{
 
          if(isValid && numberOfSquaresThatPawnCanPass == 2){
              this.justMovedTwoSquaresForward = true;
+
          }
          else {
              this.justMovedTwoSquaresForward = false;
@@ -80,6 +100,12 @@ public class Pawn extends PieceAbstract{
              return isEnemyPieceOnRightFile() && isWhitePawnMovingForward() && this.newSquare.isTherePiece() && !this.newSquare.isPieceWhite() && isWhitePawnMovingOneSquareForward();
          }
          if(isBlack()){
+             /*System.out.println("--------------------------------------------------------");
+             System.out.println("isEnemyPieceOnRightFile()" + isEnemyPieceOnRightFile());
+             System.out.println("isBlackPawnMovingForward()" + isBlackPawnMovingForward());
+             System.out.println("this.newSquare.isTherePiece()" + this.newSquare.isTherePiece());
+             System.out.println("this.newSquare.isPieceWhite()" + this.newSquare.isPieceWhite());
+             System.out.println("isBlackPawnMovingOneSquareForward()" + isBlackPawnMovingOneSquareForward());*/
              return isEnemyPieceOnRightFile() && isBlackPawnMovingForward() && this.newSquare.isTherePiece() && this.newSquare.isPieceWhite() && isBlackPawnMovingOneSquareForward();
          }
          return false;
