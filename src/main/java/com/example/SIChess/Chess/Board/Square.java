@@ -31,8 +31,8 @@ public class Square extends JPanel {
         this.setBounds(getX(), getY(), 64,64);
     }
 
-    public void setNewColor(){
-        this.setBackground(java.awt.Color.green);
+    public void setNewColor(java.awt.Color color){
+        this.setBackground(color);
     }
 
     public void setOriginalColor(){
