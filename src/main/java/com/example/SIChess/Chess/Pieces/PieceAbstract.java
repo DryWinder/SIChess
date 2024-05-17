@@ -1,5 +1,6 @@
 package com.example.SIChess.Chess.Pieces;
 
+import com.example.SIChess.Chess.Board.Board;
 import com.example.SIChess.Chess.Board.Square;
 import com.example.SIChess.Chess.Color;
 
@@ -29,6 +30,8 @@ public abstract class PieceAbstract extends JLabel {
     private boolean hasMoved;
 
     private List<Square> lastMovePath = new ArrayList<>();
+
+    public ArrayList<Square> squares = Board.getSquares();
 
 
 
@@ -86,6 +89,10 @@ public abstract class PieceAbstract extends JLabel {
 
     public boolean hasMoved(){
         return this.hasMoved;
+    }
+
+    public void setHasMoved(boolean moved){
+        this.hasMoved = moved;
     }
 
     public int getX(){

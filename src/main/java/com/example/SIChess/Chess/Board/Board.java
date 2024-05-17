@@ -13,11 +13,12 @@ import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.Math.abs;
 
 public class Board extends JFrame {
-    private ArrayList<Square> squares;
+    private static ArrayList<Square> squares;
     private ArrayList<PieceAbstract> pieces;
 
     private JLayeredPane layeredPane;
@@ -59,10 +60,17 @@ public class Board extends JFrame {
     private Square whiteKingsSquare;
     private Square blackKingsSquare;
 
+    private boolean isCheckedWhite = false;
+    private boolean isCheckedBlack = false;
+
     private int numberOfAttackers = 0;
-
-
-
+    private int willNumberOfAttackersBeIncreased = 0;
+    private PieceAbstract helperPiece = null;
+    private PieceAbstract possibleAttacker = null;
+    private ArrayList<Square> resultArray;
+    private ArrayList<Square> castleSquaresArray = new ArrayList<>();
+    private PieceAbstract newPiece = selectedPiece;
+    private int validMovesUnderCheck = 0;
 
     public Board(){
 
@@ -135,7 +143,7 @@ public class Board extends JFrame {
         return squares;
     }
 
-    public ArrayList<Square> getSquares() {
+    public static ArrayList<Square> getSquares() {
         return squares;
     }
 
@@ -191,16 +199,7 @@ public class Board extends JFrame {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                for(PieceAbstract piece : pieces){
-                    if(piece.getPieceType() == PieceType.KING){
-                        if(piece.getColor() == Color.WHITE){
-                            whiteKingsSquare = piece.getActualSquare();
-                        }
-                        if(piece.getColor() == Color.BLACK){
-                            blackKingsSquare = piece.getActualSquare();
-                        }
-                    }
-                }
+                determineKingSquares();
             }
 
             @Override
@@ -213,10 +212,10 @@ public class Board extends JFrame {
                 selectedPieceCopy = selectedPiece;
 
                 validPath = validPath(selectedPiece);
-                for (Square square : validPath){
-                    System.out.println("Press " + square.getFile() + " " + square.getRow());
-                    square.setNewColor(java.awt.Color.green);
-                }
+                setGreenColorForValidPath();
+
+                setColorForPathUnderCheck();
+
 
                 System.out.println(selectedPiece.pieceType);
                 System.out.println(selectedPiece.getColor());
@@ -234,16 +233,10 @@ public class Board extends JFrame {
             @Override
             public void mouseReleased(MouseEvent e) {
                 //TODO: Dodge java.lang.NullPointerException: Cannot invoke "com.example.decoy.Chess.Pieces.PieceAbstract.getColor()" because "this.piece" is null
-                /*if(getPiecesThatCheck(Color.BLACK).size() != 0){//checkerPiece.getColor()
-                    doesCheckRemains = true;
-                }
-                else {
-                    doesCheckRemains = false;
-                }*/
+                //System.out.println("willTheKingBeUnderAttack: " + willTheKingBeUnderAttack(selectedPiece, selectedPiece.getNewSquare()));
                 int count = 0;
-                System.out.println(pieces.size() + "RAAAAAAAAAAAAAAAHHHHHHHH ");
                 for (PieceAbstract piece : pieces){
-                    if (isThereCheck2(validPath(piece), piece.getColor())){
+                    if (isThereCheck2(validPath(piece), piece.getColor(), 1, piece)){
                         piecesThatCheck.add(piece);
                         count += 1;
                     }
@@ -254,32 +247,35 @@ public class Board extends JFrame {
                     }
                 }
                 System.out.println("ISTHERECHECK = " + count);
+                if(count > 0){
+                    if(xd(count).size() == 0) {
+                        System.out.println("CHECKMATE!!!");
+                        dispose();
+                    }
+                }
                 numberOfAttackers = count;
                 System.out.println("FUCK " + isThereCheck(validPath(selectedPiece)));
-                /*if(isCheck){
-                    checkPath = validPath(checkerPiece);
-                    //piecesThatCheck = new ArrayList<PieceAbstract>();
-                }*/
-                //System.out.println("doesCheckRemains: " + doesCheckRemains);
+
                 int finalMove = finalMove(selectedPiece.getNewSquare());
                 System.out.println("final move");
                 System.out.println("Possible moves for " + selectedPiece.getPieceType());
                 if (validPath != null){
                     for (Square square : validPath){
                         System.out.println(square.getFile() + " " + square.getRow());
-                        square.setOriginalColor();
+                        //square.setOriginalColor();
                     }
-                    selectedPiece.getActualSquare().setOriginalColor();
+                    //selectedPiece.getActualSquare().setOriginalColor();
                 }
 
                 int newCount = 0;
-                System.out.println(pieces.size() + "sdggggggggggggggggg ");
                 for (PieceAbstract piece : pieces){
-                    if (isThereCheck2(validPath(piece), piece.getColor())){
+                    if (isThereCheck2(validPath(piece), piece.getColor(), 1, piece)){
                         System.out.println("Attacker: " + piece.getPieceType());
+                        piecesThatCheck.add(piece);
                         newCount += 1;
                     }
                 }
+
                 /*if(newCount > 0){
                     returnToPreviousSquare1(selectedPiece, selectedPieceCopy.getPreviousSquare());
                 }*/
@@ -288,41 +284,91 @@ public class Board extends JFrame {
                 if(newCount > 0){
                     isCheck = true;
                 }
-
-
-                piecesThatCheck = new ArrayList<PieceAbstract>();
-
-                /*boolean isThereCheck = false;
-                if(finalMove == 1){
-                    validPath = validPath(selectedPiece);
-                    isThereCheck = isThereCheck(validPath);
-                    isCheck = isThereCheck;
-                    if(isCheck){
-                        //checkPath = validPath;
-                        checkerPiece = selectedPiece;
-                        selectedPieceCopy = selectedPiece;
+                System.out.println(numberOfAttackers);
+                if(numberOfAttackers == 1){
+                    for(PieceAbstract piece : piecesThatCheck){
+                        System.out.println(piece);
+                        checkerPiece = piece;
                     }
-
                 }
 
-               if (!isThereCheck && checkPath != null){
-                    for(Square squareThatGuardsKing : checkPath) {
-                        if (squareThatGuardsKing != null) {
-                            squareThatGuardsKing.setOriginalColor(); // Лишній раз робить колір
+
+
+
+                for(Square square : squares){
+                    if(newCount > 0){
+                        if(square != whiteKingsSquare && square != blackKingsSquare){
+                            square.setOriginalColor();
                         }
                     }
-                }*/
-
-
-                /*for(Square square : checkPath){
-                    if(selectedPiece.getActualSquare() == square){
-                        doesCheckRemains = false;
+                    else{
+                        square.setOriginalColor();
                     }
-                }*/
+                }
+
+                boolean checkMate = isThereCheckMate();
+                System.out.println("CheckMate: " + checkMate);
+                if(newCount > 0 && checkMate){
+                    //dispose();
+                }
+                //System.out.println("XD: " + xd(newCount).size());
+
+
+                validMovesUnderCheck = 0;
+                piecesThatCheck = new ArrayList<PieceAbstract>();
 
                 selectedPiece = null;
             }
         });
+    }
+
+    private void determineKingSquares(){
+        for(PieceAbstract piece : pieces){
+            if(piece.getPieceType() == PieceType.KING){
+                if(piece.getColor() == Color.WHITE){
+                    whiteKingsSquare = piece.getActualSquare();
+                }
+                if(piece.getColor() == Color.BLACK){
+                    blackKingsSquare = piece.getActualSquare();
+                }
+            }
+        }
+    }
+
+    private void setGreenColorForValidPath(){
+        for (Square square : validPath){
+            System.out.println("Press " + square.getFile() + " " + square.getRow());
+            square.setNewColor(java.awt.Color.green);
+        }
+    }
+
+    private void setColorForPathUnderCheck(){
+        ArrayList<Square> resultArray = new ArrayList<>();
+        if(checkerPiece!=null){
+            resultArray = validPathUnderCheck(selectedPiece);
+        }
+        java.awt.Color colorForSquare = java.awt.Color.green;
+        for (Square square : validPath) {
+            //System.out.println("Press " + square.getFile() + " " + square.getRow());
+            if(numberOfAttackers != 0 && resultArray != null) {
+                if (resultArray.contains(square)) {
+                    //square.setNewColor(java.awt.Color.green);
+                    colorForSquare = java.awt.Color.green;
+                } else {
+                    colorForSquare = java.awt.Color.gray;
+                }
+            }
+            else{
+                System.out.println("Press " + square.getFile() + " " + square.getRow());
+                colorForSquare = java.awt.Color.green;
+            }
+            if(colorForSquare == java.awt.Color.gray){
+                square.setOriginalColor();
+            }
+            else{
+                //square.setNewColor(colorForSquare);
+            }
+        }
     }
 
     public ArrayList<Square> validPath(PieceAbstract selectedPiece){
@@ -356,21 +402,6 @@ public class Board extends JFrame {
             }
         }
 
-        /*if(isCheck){
-            for(Square checkSquare : squareToGuardTheKing(checkPath)){
-                for(Square possibleSquare : possibleSquareToMoveIn){
-                    if(possibleSquare == checkSquare && selectedPiece.getPieceType() != PieceType.KING){
-                        resultArray.add(possibleSquare);
-                    }
-                    if(possibleSquare != checkSquare && selectedPiece.getPieceType() == PieceType.KING){
-                        resultArray.add(possibleSquare);
-                    }
-                }
-            }
-        }
-        else{
-            resultArray = possibleSquareToMoveIn;
-        }*/
         selectedPiece.setNewSquare(defaultNewSquare);
         return possibleSquareToMoveIn;
     }
@@ -390,28 +421,62 @@ public class Board extends JFrame {
         return check;
     }
 
-    public boolean isThereCheck2(ArrayList<Square> validPath, Color color) {
+    public boolean isThereCheck2(ArrayList<Square> validPath1, Color color, int mode, PieceAbstract piece) {
         boolean check = false;
-        for (Square square : validPath) {
+        boolean checkWhite = false;
+        boolean checkBlack = false;
+        if(piece.getPieceType() == PieceType.PAWN){
+            ArrayList<Square> validPathForPawn = new ArrayList<>();
+            Square pawnNewSquare = piece.getNewSquare();
+            for(Square square : this.squares){
+                piece.setNewSquare(square);
+                if(piece.getColor() == Color.WHITE){
+                    if(piece.getPreviousSquare().getRow() > piece.getNewSquare().getRow() && abs(piece.getNewSquare().getFile().getValue() - piece.getPreviousSquare().getFile().getValue()) == 1 && piece.getPreviousSquare().getRow() - piece.getNewSquare().getRow() == 1 ){
+                        validPathForPawn.add(square);
+                    }
+                }
+                if(piece.getColor() == Color.BLACK){
+                    if(piece.getPreviousSquare().getRow() < piece.getNewSquare().getRow() && abs(piece.getNewSquare().getFile().getValue() - piece.getPreviousSquare().getFile().getValue()) == 1 && piece.getNewSquare().getRow() - piece.getPreviousSquare().getRow() == 1 ){
+                        validPathForPawn.add(square);
+                    }
+                }
+            }
+            validPath1 = validPathForPawn;
+            piece.setNewSquare(pawnNewSquare);
+        }
+        for (Square square : validPath1) {
             if(color == Color.BLACK){
                 if (square.getFile() == whiteKingsSquare.getFile() && square.getRow() == whiteKingsSquare.getRow()) {
-                    square.setNewColor(java.awt.Color.yellow);
-                    this.squareThatIsChecked = square;
+                    if(mode == 1){
+                        square.setNewColor(java.awt.Color.yellow);
+                        this.squareThatIsChecked = square;
+                    }
+                    checkWhite = true;
                     check = true;
+
                 }
+
             }
 
             if(color == Color.WHITE){
                 if (square.getFile() == blackKingsSquare.getFile() && square.getRow() == blackKingsSquare.getRow()) {
-                    square.setNewColor(java.awt.Color.yellow);
-                    this.squareThatIsChecked = square;
+                    if(mode == 1) {
+                        square.setNewColor(java.awt.Color.yellow);
+                        this.squareThatIsChecked = square;
+                    }
+                    checkBlack = true;
                     check = true;
                 }
 
             }
         }
+        if(mode == 1) {
+            this.isCheckedWhite = checkWhite;
+            this.isCheckedBlack = checkBlack;
+        }
         return check;
     }
+
 
     public ArrayList<PieceAbstract> getPiecesThatCheck(Color color){
         ArrayList<PieceAbstract> piecesThatCheck = new ArrayList<>();
@@ -479,21 +544,25 @@ public class Board extends JFrame {
                         kill(square, selectedPiece, 1);
                         Rook rook = new Rook(color, PieceType.ROOK, square);
                         drawPiece(rook, square);
+                        selectedPiece = rook;
                     }
                     if (pieceName.equalsIgnoreCase("Bishop.png")) {
                         kill(square, selectedPiece, 1);
                         Bishop bishop = new Bishop(color, PieceType.BISHOP, square);
                         drawPiece(bishop, square);
+                        selectedPiece = bishop;
                     }
                     if (pieceName.equalsIgnoreCase("Queen.png")) {
                         kill(square, selectedPiece, 1);
                         Queen queen = new Queen(color, PieceType.QUEEN, square);
                         drawPiece(queen, square);
+                        selectedPiece = queen;
                     }
                     if (pieceName.equalsIgnoreCase("Knight.png")) {
                         kill(square, selectedPiece, 1);
                         Knight knight = new Knight(color, PieceType.KNIGHT, square);
                         drawPiece(knight, square);
+                        selectedPiece = knight;
                     }
                 }
             });
@@ -508,6 +577,7 @@ public class Board extends JFrame {
             button.setBounds(x, y ,100, 100);
             x += 100;
         }
+
     }
 
     private void drawPiece(PieceAbstract pieceAbstract, Square square){
@@ -663,76 +733,28 @@ public class Board extends JFrame {
         return isValid;
     }
     public boolean isValidPath(PieceAbstract selectedPiece){
-        boolean isValid = true;
+        boolean isValid = false;
         if (selectedPiece.pieceType != PieceType.KNIGHT && selectedPiece.getPieceType() != PieceType.KING) {
             int fileLimit = abs(selectedPiece.getNewSquare().getFile().getValue() - selectedPiece.getPreviousSquare().getFile().getValue());
             int rowLimit = abs(selectedPiece.getNewSquare().getRow() - selectedPiece.getPreviousSquare().getRow());
-            if (fileLimit == 0) {
+            if (fileLimit == 0 && (selectedPiece.getPieceType() == PieceType.ROOK || selectedPiece.getPieceType() == PieceType.QUEEN || selectedPiece.getPieceType() == PieceType.PAWN)) {
                 isValid = isValidPathUpAndDown(selectedPiece);
             }
-            if (rowLimit == 0){
+            if (rowLimit == 0 && (selectedPiece.getPieceType() == PieceType.ROOK || selectedPiece.getPieceType() == PieceType.QUEEN)){
                 isValid = isValidPathLeftAndRight(selectedPiece);
             }
 
-            if (fileLimit == rowLimit && rowLimit > 0){
+            if (fileLimit == rowLimit && rowLimit > 0 && (selectedPiece.getPieceType() == PieceType.BISHOP || selectedPiece.getPieceType() == PieceType.QUEEN || selectedPiece.getPieceType() == PieceType.PAWN)){
                 isValid = isValidPathDiagonal(selectedPiece);
             }
 
         }
+        else{
+            isValid = true;
+        }
         return isValid;
     }
 
-    /*public ArrayList<Square> validPath(PieceAbstract selectedPiece){
-        ArrayList<Square> possibleSquareToMoveIn = new ArrayList<>();
-        Square defaultNewSquare = selectedPiece.getNewSquare();
-
-        for (Square square : this.squares){
-            selectedPiece.setNewSquare(square);
-            if(isEnPassant(selectedPiece)){
-                if(square.getFile().getValue() == this.enPassantSquare.getFile().getValue()){
-                    if(this.enPassantSquare.getPiece().getColor() == Color.BLACK && square.getRow() == this.enPassantSquare.getRow() - 1){
-                        possibleSquareToMoveIn.add(square);
-                    }
-                    if(this.enPassantSquare.getPiece().getColor() == Color.WHITE && square.getRow() == this.enPassantSquare.getRow() + 1){
-                        possibleSquareToMoveIn.add(square);
-                    }
-                }
-            }
-            if(selectedPiece.isValidMove() && selectedPiece.getActualSquare() != square){
-                if(isValidPath(selectedPiece)){
-                    if(selectedPiece.isValidKill()){
-                        possibleSquareToMoveIn.add(square);
-                    }
-                    if(!square.isTherePiece()){
-                        possibleSquareToMoveIn.add(square);
-                    }
-                }
-            }
-            if(selectedPiece.getPieceType() == PieceType.PAWN && selectedPiece.getActualSquare() != square && selectedPiece.isValidKill()){
-                possibleSquareToMoveIn.add(square);
-            }
-        }
-
-        ArrayList<Square> resultArray = new ArrayList<>();
-        /*if(isCheck){
-            for(Square checkSquare : squareToGuardTheKing(checkPath)){
-                for(Square possibleSquare : possibleSquareToMoveIn){
-                    if(possibleSquare == checkSquare && selectedPiece.getPieceType() != PieceType.KING){
-                        resultArray.add(possibleSquare);
-                    }
-                    if(possibleSquare != checkSquare && selectedPiece.getPieceType() == PieceType.KING){
-                        resultArray.add(possibleSquare);
-                    }
-                }
-            }
-        }
-        else{
-            resultArray = possibleSquareToMoveIn;
-        }
-        resultArray = possibleSquareToMoveIn;
-        selectedPiece.setNewSquare(defaultNewSquare);
-        return resultArray;
-    }*/
 
     // TODO:.......................ENPASSANT SECTION.......................
     public boolean isEnPassant(PieceAbstract selectedPiece){
@@ -790,8 +812,10 @@ public class Board extends JFrame {
         int fileLimit = abs(rookSquare.getFile().getValue() - selectedPiece.getPreviousSquare().getFile().getValue());
         int fileFlag = selectedPiece.getPreviousSquare().getFile().getValue();
         int rowFlag = selectedPiece.getPreviousSquare().getRow();
+        PieceAbstract rook = rookSquare.getPiece();
         System.out.println(fileLimit);
         Square square1 = null;
+        Square kingSquare;
         for(Square square : this.squares){
             if(fileLimit == 3) {
                 if (square.getRow() == rowFlag) {
@@ -801,22 +825,29 @@ public class Board extends JFrame {
                         square1 = square;
                     }
                     if (square.getFile().getValue() == fileFlag + 1) {
-                        move(square, rookSquare.getPiece());
-                        square.setPiece(rookSquare.getPiece());
+                        move(square, rookSquare.getPiece(), 1);
+                        square.setPiece(rook);
                         square.nowHasPiece();
+                        //rookSquare.setPiece(null);
                     }
                 }
             }
             if(fileLimit == 4){
                 if (square.getRow() == rowFlag) {
                     if (square.getFile().getValue() == fileFlag - 2) {
-                        move(square, selectedPiece);
+                        move(square, selectedPiece, 1);
                         square.setPiece(selectedPiece);
                         square.nowHasPiece();
+                        if(selectedPiece.getColor() == Color.WHITE){
+                            this.whiteKingsSquare = square;
+                        }
+                        else{
+                            this.blackKingsSquare = square;
+                        }
                     }
                     if (square.getFile().getValue() == fileFlag - 1) {
-                        move(square, rookSquare.getPiece());
-                        square.setPiece(rookSquare.getPiece());
+                        move(square, rookSquare.getPiece(), 1);
+                        square.setPiece(rook);
                         square.nowHasPiece();
                     }
                 }
@@ -829,8 +860,16 @@ public class Board extends JFrame {
         if (selectedPiece.isBlack()) {
             this.numberOfBlackMoves -= 1;
         }
-        move(square1, selectedPiece);
-        square1.nowHasPiece();
+        if(square1 != null) {
+            move(square1, selectedPiece, 1);
+            square1.nowHasPiece();
+            if(selectedPiece.getColor() == Color.WHITE){
+                this.whiteKingsSquare = square1;
+            }
+            else{
+                this.blackKingsSquare = square1;
+            }
+        }
 
     }
 
@@ -855,17 +894,17 @@ public class Board extends JFrame {
 
     }
 
-    public void move(Square newSquare, PieceAbstract selectedPiece){
-
-        if(selectedPiece.pieceType == PieceType.PAWN){
-            if(abs(selectedPiece.getNewSquare().getRow() - selectedPiece.getPreviousSquare().getRow()) == 2){
-                selectedPiece.setNumberPieceHasMoved(2);
-            }
-            else{
-                selectedPiece.setNumberPieceHasMoved(1);
-            }
-            if(selectedPiece.getNumberPieceHasMoved() == 6){
-                promotePawn(selectedPiece.getColor());
+    public void move(Square newSquare, PieceAbstract selectedPiece, int mode){
+        if(mode == 1) {
+            if (selectedPiece.pieceType == PieceType.PAWN) {
+                if (abs(selectedPiece.getNewSquare().getRow() - selectedPiece.getPreviousSquare().getRow()) == 2) {
+                    selectedPiece.setNumberPieceHasMoved(2);
+                } else {
+                    selectedPiece.setNumberPieceHasMoved(1);
+                }
+                if (selectedPiece.getNumberPieceHasMoved() == 6) {
+                    promotePawn(selectedPiece.getColor());
+                }
             }
         }
 
@@ -877,17 +916,19 @@ public class Board extends JFrame {
         selectedPiece.getActualSquare().setTypeOfPiece(selectedPiece.getPieceType());
         selectedPiece.getPreviousSquare().nowThereIsNoPiece();
         selectedPiece.setPreviousSquare(newSquare);
-        selectedPiece.pieceMoved();
 
-        if (selectedPiece.isWhite()){
-            whiteMoved = true;
-            blackMoved = false;
-            this.numberOfWhiteMoves += 1;
-        }
-        if (selectedPiece.isBlack()) {
-            blackMoved = true;
-            whiteMoved = false;
-            this.numberOfBlackMoves += 1;
+        if(mode == 1){
+            selectedPiece.pieceMoved();
+            if (selectedPiece.isWhite()){
+                whiteMoved = true;
+                blackMoved = false;
+                this.numberOfWhiteMoves += 1;
+            }
+            if (selectedPiece.isBlack()) {
+                blackMoved = true;
+                whiteMoved = false;
+                this.numberOfBlackMoves += 1;
+            }
         }
 
     }
@@ -912,167 +953,453 @@ public class Board extends JFrame {
         selectedPiece.setActualSquare(previousSquare);
     }
 
-    public int finalMove(Square newSquare){
-        int moved = 0;
-        System.out.println("En Passant " + isEnPassant(selectedPiece));
-        //TODO: IF CHECK == TRUE
-
-        if(numberOfAttackers == 1){
-            ArrayList<Square> resultArray = new ArrayList<>();
-            if(checkerPiece.getPieceType() == PieceType.KNIGHT){
-                if(selectedPiece.getPieceType() == PieceType.KING){
+    private ArrayList<Square> validPathUnderCheck(PieceAbstract selectedPiece){
+        ArrayList<Square> resultArray = new ArrayList<>();
+        if(checkerPiece != null) {
+            if (checkerPiece.getPieceType() == PieceType.KNIGHT) {
+                if (selectedPiece.getPieceType() == PieceType.KING) {
                     resultArray = validPath;
-                }
-                else{
+                } else {
                     resultArray.add(checkerPiece.getActualSquare());
                 }
-            }
-
-            else {
-                System.out.println("sizeat = " + piecesThatCheck.size());
-                System.out.println("sizeval = " + this.validPath.size());
-                System.out.println("checker: " + checkerPiece.getPieceType() + checkerPiece.getColor());
-                for (Square possibleSquare : this.validPath) {
+            } else {
+                for (Square possibleSquare : validPath(selectedPiece)) {
                     int counter = 0;
                     //System.out.println("checkSquare " + checkSquare.getFile() + " " + checkSquare.getRow());
-                    System.out.println("dick23 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                    //System.out.println("dick23 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                     for (Square checkSquare : squareToGuardTheKing(validPath(checkerPiece))) {
                         System.out.println("checkSquare " + checkSquare.getFile() + " " + checkSquare.getRow());
-                        //System.out.println("dick23 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+
                         if (possibleSquare == checkSquare && selectedPiece.getPieceType() != PieceType.KING) {
                             resultArray.add(possibleSquare);
-                            System.out.println("dick1 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                            //System.out.println("dick1 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                         }
-                        if (possibleSquare != checkSquare && selectedPiece.getPieceType() == PieceType.KING) {
-                            counter += 1;
+                        if (possibleSquare != checkSquare && checkerPiece.getActualSquare() == checkSquare && selectedPiece.getPieceType() == PieceType.KING) {
+                            if(!willTheKingBeUnderAttack(selectedPiece, possibleSquare)) {
+                                System.out.println("DICK " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                                counter += 1;
+                            }
                             //resultArray.add(possibleSquare);
                             //kingsResultArray.add(possibleSquare);
-                            System.out.println("dick2 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                            //System.out.println("dick2 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                         }
                         if (possibleSquare == checkSquare && checkerPiece.getActualSquare() == checkSquare && selectedPiece.getPieceType() == PieceType.KING) {
-                            counter += 1;
+                            if(!willTheKingBeUnderAttack(selectedPiece, checkerPiece.getActualSquare())) {
+                                counter += 1;
+                            }
                             //resultArray.add(possibleSquare);
                             //kingsResultArray.add(possibleSquare);
-                            System.out.println("dick6 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                            //System.out.println("dick6 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                         }
                         if (possibleSquare == checkSquare && selectedPiece.getPieceType() == PieceType.KING) {
                             //resultArray.add(possibleSquare);
-                            System.out.println("dick3 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
+                            //System.out.println("dick3 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                         }
                     }
                     if (counter == squareToGuardTheKing(validPath(checkerPiece)).size()) {
+                        System.out.println("dick23 " + possibleSquare.getFile() + " " + possibleSquare.getRow());
                         resultArray.add(possibleSquare);
                     }
-                    System.out.println("Counter: " + counter);
+                    counter = 0;
+                    //System.out.println("Counter: " + counter);
                 }
+            }
+        }
+        /*this.resultArray = resultArray;
+        ArrayList<Square> resultArray1 = new ArrayList<>();
+        for(Square square : resultArray){
+            if(!willTheKingBeUnderAttack(selectedPiece, square)){
+                resultArray1.add(square);
+            }
+        }*/
+        return resultArray;
+    }
+
+    public ArrayList<Square> xd(int checks) {
+        ArrayList<Square> result = new ArrayList<>();
+        CopyOnWriteArrayList<PieceAbstract> piecesCopy = new CopyOnWriteArrayList<>(this.pieces);
+        CopyOnWriteArrayList<Square> squaresCopy = new CopyOnWriteArrayList<>(this.squares);
+
+        if(checks != 0) {
+            for (PieceAbstract piece : piecesCopy) {
+                if (checkerPiece.getColor() != piece.getColor()) {
+                    /*for (Square square : squaresCopy) {
+                        piece.setNewSquare(square);
+                        if((piece.isValidMove() && isValidPath(piece)) || (piece.isValidKill() && isValidPath(piece))) {
+                            piece.setNewSquare(piece.getPreviousSquare());
+                            if (!willTheKingBeUnderAttack(piece, square) && this.numberOfAttackers == 1) {
+                                result.add(square);
+                            }
+                        }
+                        piece.setNewSquare(piece.getPreviousSquare());*/
+                    for(Square square1 : validPathUnderCheck(piece)){
+                        result.add(square1);
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public boolean isThereCheck_castle(ArrayList<Square> validPath1, Color color) {
+        boolean check = false;
+        for (Square square : validPath1) {
+            if (this.castleSquaresArray.contains(square)) {
+                check = true;
+            }
+        }
+
+        return check;
+    }
+
+    public boolean willTheKingBeUnderAttack(PieceAbstract piece, Square newSquare){
+        boolean result = false;
+        PieceAbstract pieceClone = piece;
+        PieceAbstract pieceOnNewSquare = newSquare.getPiece();
+        boolean hasMovedOnNewSqaure = false;
+        boolean hasMovedPiece = piece.hasMoved();
+        if(newSquare.getPiece() != null) {
+            hasMovedOnNewSqaure = pieceOnNewSquare.hasMoved();
+            System.out.println("PIECETYPE NEW: " + newSquare.getPiece().getPieceType());
+        }
+        System.out.println("PIECETYPE: " + piece.getPieceType());
+
+        Square whiteKingSquare = this.whiteKingsSquare;
+        Square blackKingSquare = this.blackKingsSquare;
+
+        Square prevSquare = piece.getPreviousSquare();
+        Square actualSquare = piece.getActualSquare();
+        Square newSquare1 = piece.getNewSquare();
+        System.out.println("prevSquare: " + prevSquare.getFile() + " " + prevSquare.getRow());
+        System.out.println("actualSquare: " + actualSquare.getFile() + " " + actualSquare.getRow());
+        System.out.println("actualSquare getPiece: " + actualSquare.getPiece() + " Type: " + actualSquare.getTypeOfPiece());
+        System.out.println("actualSquare getPiece: " + actualSquare.getPiece());
+        System.out.println("newSquare: " + newSquare.getFile() + " " + newSquare.getRow());
+        System.out.println("newSquare getPiece: " + newSquare.getPiece());
+        //move(newSquare, selectedPiece, 0);
+
+        boolean isCastle = isCastle(piece, newSquare);
+
+        if(isCastle){
+            System.out.println("CASTLE HERE 1");
+            int kingFile = selectedPiece.getPreviousSquare().getFile().getValue();
+            int fileLimit = abs(newSquare.getFile().getValue() - selectedPiece.getPreviousSquare().getFile().getValue());
+            int fileFlag = selectedPiece.getPreviousSquare().getFile().getValue();
+            int rowFlag = selectedPiece.getPreviousSquare().getRow();
+            int sign = 1;
+            if(newSquare.getFile().getValue() == 1){
+                sign = -1;
+            }
+            for(Square square : this.squares) {
+                for (int i = 0; i < fileLimit; i++) {
+                    if(square.getFile().getValue() == sign*i+kingFile && square.getRow() == rowFlag){
+                        this.castleSquaresArray.add(square);
+                        System.out.println("NAHHHHHHHHHH");
+                        System.out.println(square.getFile() + " " + square.getRow());
+                    }
+                }
+            }
+        }
+
+        for(Square square : this.squares){
+            if(square == prevSquare){
+                square.setPiece(null);
+                square.nowThereIsNoPiece();
+            }
+            if (square == newSquare){
+                square.setPiece(piece);
+                square.nowHasPiece();
+                if(selectedPiece.getPieceType() == PieceType.KING){
+                    if(selectedPiece.getColor() == Color.WHITE){
+                        this.whiteKingsSquare = square;
+                    }
+                    else {
+                        System.out.println(square.getFile() + " " + square.getRow());
+                        this.blackKingsSquare = square;}
+                }
+            }
+        }
+        if(pieceOnNewSquare != null) {
+            if (this.pieces.contains(pieceOnNewSquare)) {
+                this.pieces.remove(pieceOnNewSquare);
+            }
+        }
+        for(PieceAbstract pieceOnBoard: this.pieces){
+            this.helperPiece = pieceOnBoard;
+
+            if(isThereCheck2(validPath(pieceOnBoard), pieceOnBoard.getColor(), 0, pieceOnBoard)){
+                if(selectedPiece.getColor() != pieceOnBoard.getColor()){
+                //if(checkerPiece.getColor() != pieceOnBoard.getColor()){
+                    result = true;
+                    System.out.println("Possible ATTACKER: " + pieceOnBoard.getPieceType());
+                    this.willNumberOfAttackersBeIncreased += 1;
+                    this.possibleAttacker = pieceOnBoard;
+                }
+            }
+            if(isCastle) {
+                System.out.println("CASTLE HERE 2 ");
+                if (isThereCheck_castle(validPath(pieceOnBoard), pieceOnBoard.getColor()) && pieceOnBoard.getColor() != piece.getColor()) {
+                    result = true;
+
+                    System.out.println("Possible ATTACKER castle: " + pieceOnBoard.getPieceType() + pieceOnBoard.getColor());
+                    this.willNumberOfAttackersBeIncreased += 1;
+                    this.possibleAttacker = pieceOnBoard;
+                }
+            }
+        }
+
+
+        piece.setPreviousSquare(prevSquare);
+        if(pieceOnNewSquare != null) {
+            this.pieces.add(pieceOnNewSquare);
+        }
+        for(Square square : this.squares){
+            if(square == piece.getPreviousSquare()){
+                square.setPiece(piece);
+                piece.getPreviousSquare().nowHasPiece();
+            }
+            if(square == newSquare){
+                square.setPiece(pieceOnNewSquare);
             }
 
-            System.out.println("size of my dick : " + resultArray.size());
-            if(resultArray.size() == 0){
-                System.out.println("here41");
-                returnToPreviousSquare(selectedPiece);
-                return 0;
+        }
+        this.whiteKingsSquare = whiteKingSquare;
+        this.blackKingsSquare = blackKingSquare;
+        System.out.println("prevSquare: " + piece.getPreviousSquare().getFile() + " " + piece.getPreviousSquare().getRow());
+        System.out.println("prevSquare getPiece: " +  piece.getPreviousSquare().getPiece() + " Type: " + piece.getPreviousSquare().getTypeOfPiece());
+
+        /*newSquare.nowThereIsNoPiece();
+        piece.getActualSquare().nowThereIsNoPiece();
+        piece.getNewSquare().nowThereIsNoPiece();
+        piece.setActualSquare(actualSquare);
+        piece.getActualSquare().setPiece(piece);
+        piece.getActualSquare().nowHasPiece();
+        piece.getActualSquare().thePieceIsWhite(selectedPiece.isWhite());
+        piece.getActualSquare().setTypeOfPiece(piece.getPieceType());
+        piece.setPreviousSquare(prevSquare);
+        piece.getPreviousSquare().setPiece(piece);
+        piece.setNewSquare(newSquare1);
+        piece.getNewSquare().setPiece(pieceOnNewSquare);
+
+        //piece.setPreviousSquare(prevSquare);
+        //piece.setActualSquare(actualSquare);
+        //piece.setNewSquare(newSquare1);
+
+        System.out.println("squareEmpty123: " + newSquare.getFile() + "  " + newSquare.getRow());
+        System.out.println("squareEmpty123: " + newSquare.isTherePiece());
+        System.out.println("prevSquare: " + piece.getPreviousSquare().getFile() + " " + piece.getPreviousSquare().getRow());
+        System.out.println("actualSquare: " + piece.getActualSquare().getFile() + " " + piece.getActualSquare().getRow());
+        System.out.println("actualSquare getPiece: " + piece.getActualSquare().getPiece() + " Type: " + piece.getActualSquare().getTypeOfPiece());
+        System.out.println("newSquare of Piece: " + piece.getNewSquare().getFile() + " " + piece.getNewSquare().getRow());
+        System.out.println("newSquare of Piece getPiece: " + piece.getNewSquare().getPiece());
+        System.out.println("newSquare: " + newSquare.getFile() + " " + newSquare.getRow());
+        System.out.println("newSquare getPiece: " + newSquare.getPiece());*/
+
+        System.out.println("Will: " + this.willNumberOfAttackersBeIncreased);
+        System.out.println("Now: " + this.numberOfAttackers);
+        /*if(this.willNumberOfAttackersBeIncreased == this.numberOfAttackers){
+            result = false;
+        }
+        else{
+            result = true;
+        }
+        if(this.numberOfAttackers > 0){
+            if(this.willNumberOfAttackersBeIncreased > 0){
+                result = false;
             }
-            for(Square square : resultArray){
-                System.out.println("+-+-+-+-+-++--+-+-+-+--+-+-+-+-+");
-                System.out.println(square.getFile() + " " + square.getRow());
-                if(square.getFile() == newSquare.getFile() && square.getRow() == newSquare.getRow()) {
-                    System.out.println("here1");
-                    if (newSquare.isTherePiece() && selectedPiece.isValidKill() && isValidPath(selectedPiece)) {
-                        System.out.println("here21");
-                        kill(newSquare, selectedPiece, 0);
-                        move(newSquare, selectedPiece);
-                        if(selectedPiece.getPieceType() == PieceType.KING){
-                            if(selectedPiece.getColor() == Color.WHITE){
-                                whiteKingsSquare = selectedPiece.getActualSquare();
-                            }
-                            if(selectedPiece.getColor() == Color.BLACK){
-                                blackKingsSquare = selectedPiece.getActualSquare();
+            else{
+                result = true;
+            }
+        }*/
+
+        piece.setHasMoved(hasMovedPiece);
+        if(newSquare.getPiece() != null) {
+            newSquare.getPiece().setHasMoved(hasMovedOnNewSqaure);
+        }
+
+
+        if(this.willNumberOfAttackersBeIncreased != 0){
+            result = true;
+        }
+        else{
+            result = false;
+        }
+        this.castleSquaresArray = new ArrayList<>();
+        this.willNumberOfAttackersBeIncreased = 0;
+        return result;
+    }
+
+    public boolean isThereCheckMate(){
+        boolean checkmate = false;
+        int countOfPossibleMoves = 0;
+        if(checkerPiece != null) {
+            if (selectedPiece.getColor() == checkerPiece.getColor()) {
+                for (PieceAbstract piece : this.pieces) {
+
+                    if (piece.getColor() != checkerPiece.getColor()) {
+                        System.out.println("piece: " + piece.getPieceType() + " " + piece.getColor() + " " + piece.getPreviousSquare().getFile());
+
+                        if (piece.getPieceType() != PieceType.KING) {
+                            countOfPossibleMoves += validPathUnderCheck(piece).size();
+                            System.out.println("piece: " + piece.getPieceType() + " " + piece.getColor() + " " + piece.getPreviousSquare().getFile());
+                            System.out.println("CHECKMATE moves: " + countOfPossibleMoves);
+                        } else {
+                            for (Square square : validPath(piece)) {
+                                validMoveUnderCheck(piece, square, 0);
+                                countOfPossibleMoves += this.validMovesUnderCheck;
+                                System.out.println("Count: " + countOfPossibleMoves);
+                                System.out.println(square.getFile() + " " + square.getRow());
                             }
                         }
-                        setCountOfMoves(selectedPiece);
-                        return 1;
                     }
-                    if (!newSquare.isTherePiece()) {
-                        System.out.println("here22");
-                        move(newSquare, selectedPiece);
-                        if(selectedPiece.getPieceType() == PieceType.KING){
-                            if(selectedPiece.getColor() == Color.WHITE){
-                                whiteKingsSquare = selectedPiece.getActualSquare();
-                            }
-                            if(selectedPiece.getColor() == Color.BLACK){
-                                blackKingsSquare = selectedPiece.getActualSquare();
-                            }
-                        }
-                        setCountOfMoves(selectedPiece);
-                        return 1;
+
+                }
+                if (countOfPossibleMoves == 0) {
+                    checkmate = true;
+                }
+            }
+        }
+        return checkmate;
+    }
+
+    public boolean doesKingAttackKing(PieceAbstract king, Square newSquare){
+        boolean result = false;
+        ArrayList<Square> oppositeKingSquares = new ArrayList<>();
+        for(PieceAbstract piece : this.pieces){
+            if(piece.getPieceType() == PieceType.KING && piece.getColor() != king.getColor()) {
+                for (Square square : this.squares) {
+                    if ((abs(square.getFile().getValue() - piece.getPreviousSquare().getFile().getValue()) + abs(square.getRow() - piece.getPreviousSquare().getRow()) == 1)
+                            || (abs(square.getFile().getValue() - piece.getPreviousSquare().getFile().getValue()) == 1 && abs(square.getRow() - piece.getPreviousSquare().getRow()) == 1)){
+                        oppositeKingSquares.add(square);
                     }
                 }
-                else{
-                    System.out.println("here33");
+
+            }
+        }
+        if(oppositeKingSquares.contains(newSquare)){
+            result = true;
+        }
+
+        return result;
+    }
+
+    public int validMoveUnderCheck(PieceAbstract selectedPiece, Square newSquare, int mode){
+        System.out.println("11111111111111");
+        if(possibleAttacker != null){
+            System.out.println("22222222222");
+            if(newSquare.getPiece() != null) {
+                System.out.println(newSquare.getPiece().getPieceType() + " " + newSquare.getPiece().getColor());
+                if (newSquare.getPiece() == possibleAttacker) {
+                    this.validMovesUnderCheck += 1;
+                    if (mode == 1) {
+                        kill(newSquare, selectedPiece, 0);
+                        move(newSquare, selectedPiece, 1);
+                        setCountOfMoves(selectedPiece);
+                    }
+                    return 1;
+                } else {
+                    System.out.println("33333333333333333");
                     returnToPreviousSquare(selectedPiece);
                     return 0;
                 }
             }
         }
+        System.out.println("44444444444444");
+        returnToPreviousSquare(selectedPiece);
+        return 0;
+    }
+
+    public int finalMove(Square newSquare) {
+        //System.out.println("CheckMate: " + isThereCheckMate());
+        /*if(selectedPiece.getNewSquare().getPiece() != null) {
+            System.out.println(selectedPiece.getNewSquare().getPiece().getPieceType() + " " + selectedPiece.getNewSquare().getPieceColor());
+        }*/
+        if (selectedPiece.getPieceType() == PieceType.KING) {
+            if (doesKingAttackKing(selectedPiece, newSquare)) {
+                returnToPreviousSquare(selectedPiece);
+                return 0;
+            }
+        }
+        int moved = 0;
+        System.out.println("En Passant " + isEnPassant(selectedPiece));
+        //TODO: IF CHECK == TRUE
+
+        boolean willTheKingBeUnderAttack = willTheKingBeUnderAttack(selectedPiece, newSquare);
+        System.out.println("willTheKingBeUnderAttack: " + willTheKingBeUnderAttack);
+        if(willTheKingBeUnderAttack){
+            returnToPreviousSquare(selectedPiece);
+            return 0;
+        }
+        /*if (!willTheKingBeUnderAttack) {
+            //return validMoveUnderCheck(selectedPiece, newSquare, 1);
+            if (numberOfAttackers == 1) {
+                ArrayList<Square> resultArray = validPathUnderCheck(selectedPiece);
+
+                Square resultSquare = null;
+
+                System.out.println("size of my dick : " + resultArray.size());
+                if (resultArray.size() == 0) {
+                    System.out.println("here41");
+                    returnToPreviousSquare(selectedPiece);
+                    return 0;
+                }
+                for (Square square : resultArray) {
+                    System.out.println("+-+-+-+-+-++--+-+-+-+--+-+-+-+-+");
+                    System.out.println(square.getFile() + " " + square.getRow());
+                    System.out.println(newSquare.getFile() + " " + newSquare.getRow() + " xd");
+                    if (square.getFile() == newSquare.getFile() && square.getRow() == newSquare.getRow()) {
+                        System.out.println("here1");
+                        resultSquare = square;
+                    }
+                }
+                if (resultSquare != null) {
+                    if (newSquare.isTherePiece() && selectedPiece.isValidKill() && isValidPath(selectedPiece)) {
+                        System.out.println("here21");
+                        kill(newSquare, selectedPiece, 0);
+                        move(newSquare, selectedPiece, 1);
+                        if (selectedPiece.getPieceType() == PieceType.KING) {
+                            if (selectedPiece.getColor() == Color.WHITE) {
+                                whiteKingsSquare = selectedPiece.getActualSquare();
+                            }
+                            if (selectedPiece.getColor() == Color.BLACK) {
+                                blackKingsSquare = selectedPiece.getActualSquare();
+                            }
+                        }
+                        setCountOfMoves(selectedPiece);
+                        checkerPiece = null;
+                        return 1;
+                    }
+                    if (!newSquare.isTherePiece()) {
+                        System.out.println("here22");
+                        move(newSquare, selectedPiece, 1);
+                        if (selectedPiece.getPieceType() == PieceType.KING) {
+                            if (selectedPiece.getColor() == Color.WHITE) {
+                                whiteKingsSquare = selectedPiece.getActualSquare();
+                            }
+                            if (selectedPiece.getColor() == Color.BLACK) {
+                                blackKingsSquare = selectedPiece.getActualSquare();
+                            }
+                        }
+                        setCountOfMoves(selectedPiece);
+                        checkerPiece = null;
+                        return 1;
+                    }
+
+                } else {
+                    System.out.println("here33");
+                    returnToPreviousSquare(selectedPiece);
+                    return 0;
+                }
+            }
+        }*/
+
         if(numberOfAttackers > 1){
             if(selectedPiece.getPieceType() != PieceType.KING){
                 returnToPreviousSquare(selectedPiece);
                 return 0;
             }
         }
-        /*if(doesCheckRemains || isCheck){
-            for(Square square : checkPath){
-                System.out.println(square.getFile() + " dfgnlfd " + square.getRow());
-                if(newSquare == square && selectedPiece.getPieceType() != PieceType.KING){
-                    moved = 1;
-                }
-                if(selectedPiece.getPieceType() == PieceType.KING){
-                    for(Square square1 : validPath(selectedPiece)){
-                        if(square1 == newSquare && square1 != square){
-                            System.out.println(square.getFile() + " here " + square.getRow());
-                            moved = 1;
-                        }
-                    }
-                }
 
-            }
-            if(moved == 0){
-                System.out.println("+++++++++++++++++++++++++++++++++++++++++++++");
-                returnToPreviousSquare(selectedPiece);
-                return 0;
-            }
-            if(moved == 1){
-                move(newSquare, selectedPiece);
-                setCountOfMoves(selectedPiece);
-                return 1;
-            }*/
-        /*if(doesCheckRemains || isCheck){
-            if(getPiecesThatCheck(Color.BLACK).size() == 0 ){
-                System.out.println("here wtf");
-                move(newSquare, selectedPiece);
-                setCountOfMoves(selectedPiece);
-                moved = 1;
-            }
-            else{
-                System.out.println("Previous " + selectedPiece.getPreviousSquare().getFile() + " " + selectedPiece.getPreviousSquare().getRow());
-                returnToPreviousSquare(selectedPiece);
-                return 0;
-            }*/
-        //}
-
-        /*if(isCheck){
-            int flag = 0;
-            for(Square squareThatGuardKing : checkPath) {
-                if (newSquare == squareThatGuardKing) {
-                    flag = 1;
-                }
-            }
-            if(flag == 0){
-                returnToPreviousSquare(selectedPiece);
-                return;
-            }
-        }*/
         if(selectedPiece.getPieceType() == PieceType.KING && isCastle(selectedPiece, newSquare)){
             System.out.println("Castle " + isCastle(selectedPiece, newSquare));
             setCountOfMoves(selectedPiece);
@@ -1082,15 +1409,21 @@ public class Board extends JFrame {
         }
 
         if(newSquare.isTherePiece()){
+            System.out.println("squareEmpty: " + newSquare.getFile() + "  " + newSquare.getRow());
             if(newSquare.getPiece().getColor() == selectedPiece.getColor()){
                 returnToPreviousSquare(selectedPiece);
                 return 0;
             }
 
             else{
+                System.out.println("abrakadabra");
+                System.out.println(selectedPiece.isValidKill());
+                System.out.println(isValidPath(selectedPiece));
+
                 if(selectedPiece.isValidKill() && isValidPath(selectedPiece)){
+                    System.out.println("abrakadabra23");
                     kill(newSquare, selectedPiece, 0);
-                    move(newSquare, selectedPiece);
+                    move(newSquare, selectedPiece, 1);
                     setCountOfMoves(selectedPiece);
                     moved = 1;
                 }
@@ -1114,7 +1447,7 @@ public class Board extends JFrame {
                         }
                     }
 
-                    move(newSquare, selectedPiece);
+                    move(newSquare, selectedPiece, 1);
                     setCountOfMoves(selectedPiece);
                     moved = 1;
                 }
@@ -1126,8 +1459,16 @@ public class Board extends JFrame {
                 moved = 0;
             }
             if(selectedPiece.isValidMove() && isValidPath(selectedPiece)){
-                move(newSquare, selectedPiece);
+                move(newSquare, selectedPiece, 1);
                 setCountOfMoves(selectedPiece);
+                if (selectedPiece.getPieceType() == PieceType.KING) {
+                    if (selectedPiece.getColor() == Color.WHITE) {
+                        whiteKingsSquare = newSquare;
+                    }
+                    if (selectedPiece.getColor() == Color.BLACK) {
+                        blackKingsSquare = newSquare;
+                    }
+                }
                 moved = 1;
             }
             else{
@@ -1404,6 +1745,9 @@ public class Board extends JFrame {
             pieces.add(pawn);
             square.setPiece(pawn);
             square.nowHasPiece();
+            pawn.setNewSquare(square);
+
+            pawn.getNewSquare().setPiece(pawn);
         }
 
         if (square.getRow() == 1 || square.getRow() == 8) {

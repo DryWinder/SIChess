@@ -99,14 +99,16 @@ public class Pawn extends PieceAbstract{
          if(isWhite()){
              return isEnemyPieceOnRightFile() && isWhitePawnMovingForward() && this.newSquare.isTherePiece() && !this.newSquare.isPieceWhite() && isWhitePawnMovingOneSquareForward();
          }
-         if(isBlack()){
+         if(this.newSquare.getPiece() != null) {
+             if (isBlack()) {
              /*System.out.println("--------------------------------------------------------");
              System.out.println("isEnemyPieceOnRightFile()" + isEnemyPieceOnRightFile());
              System.out.println("isBlackPawnMovingForward()" + isBlackPawnMovingForward());
              System.out.println("this.newSquare.isTherePiece()" + this.newSquare.isTherePiece());
              System.out.println("this.newSquare.isPieceWhite()" + this.newSquare.isPieceWhite());
              System.out.println("isBlackPawnMovingOneSquareForward()" + isBlackPawnMovingOneSquareForward());*/
-             return isEnemyPieceOnRightFile() && isBlackPawnMovingForward() && this.newSquare.isTherePiece() && this.newSquare.isPieceWhite() && isBlackPawnMovingOneSquareForward();
+                 return isEnemyPieceOnRightFile() && isBlackPawnMovingForward() && this.newSquare.isTherePiece() && this.newSquare.getPiece().isWhite() && isBlackPawnMovingOneSquareForward();
+             }
          }
          return false;
     }

@@ -58,6 +58,9 @@ public class Square extends JPanel {
     public  int getY(){ return (getRow()-1)*64 + Board.getYLocation();}
 
     public boolean isTherePiece(){
+        if(this.piece == null && isTherePiece == true){
+            isTherePiece = false;
+        }
         return isTherePiece;
     }
 
@@ -70,12 +73,12 @@ public class Square extends JPanel {
     }
 
     public void nowHasPiece(){
-        isTherePiece = true;
+        this.isTherePiece = true;
     }
 
     public void nowThereIsNoPiece(){
         this.piece = null;
-        isTherePiece = false;
+        this.isTherePiece = false;
     }
 
     public boolean isPieceWhite(){return this.isPieceWhite;}
