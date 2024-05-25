@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 
 
 public class Knight extends PieceAbstract{
+    public int pieceScore = 3;
 
 
     public Knight(Color color, PieceType KNIGHT, Square square){
@@ -25,6 +26,10 @@ public class Knight extends PieceAbstract{
     @Override
     public void drawPath(Square startSquare, Square endSquare) {
 
+    }
+
+    public int getScore(){
+        return this.pieceScore;
     }
 
     @Override

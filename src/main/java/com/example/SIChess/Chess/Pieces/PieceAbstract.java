@@ -33,6 +33,8 @@ public abstract class PieceAbstract extends JLabel {
 
     public ArrayList<Square> squares = Board.getSquares();
 
+    public int pieceScore = 0;
+
 
 
 
@@ -49,6 +51,9 @@ public abstract class PieceAbstract extends JLabel {
 
         this.setBounds(getX(), getY(), 64,64);
 
+    }
+    public int getScore(){
+        return this.pieceScore;
     }
 
     public abstract void setNumberPieceHasMoved(int number);

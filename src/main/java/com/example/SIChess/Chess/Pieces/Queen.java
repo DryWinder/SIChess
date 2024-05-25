@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 
 
 public class Queen extends PieceAbstract{
+    public int pieceScore = 9;
 
     public Queen(Color color, PieceType QUEEN, Square square){
         super(color, QUEEN, square);
@@ -22,6 +23,10 @@ public class Queen extends PieceAbstract{
     @Override
     public void validPath(Square startSquare, Square endSquare) {
 
+    }
+
+    public int getScore(){
+        return this.pieceScore;
     }
 
 

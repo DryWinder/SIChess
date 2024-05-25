@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 
 
 public class Rook extends PieceAbstract{
+    public int pieceScore = 5;
 
     public Rook(Color color, PieceType ROOK, Square square){
         super(color, ROOK, square);
@@ -16,6 +17,10 @@ public class Rook extends PieceAbstract{
     @Override
     public void drawPath(Square startSquare, Square endSquare) {
 
+    }
+
+    public int getScore(){
+        return this.pieceScore;
     }
 
     @Override

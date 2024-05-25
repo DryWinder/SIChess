@@ -3,10 +3,13 @@ package com.example.SIChess.Chess.Pieces;
 import com.example.SIChess.Chess.Board.Square;
 import com.example.SIChess.Chess.Color;
 
+import javax.naming.InsufficientResourcesException;
+
 import static java.lang.Math.abs;
 
 
 public class King extends PieceAbstract{
+    public int pieceScore = Integer.MAX_VALUE;
 
     public King(Color color, PieceType KING, Square square){
         super(color, KING, square);
@@ -16,6 +19,9 @@ public class King extends PieceAbstract{
     @Override
     public void drawPath(Square startSquare, Square endSquare) {
 
+    }
+    public int getScore(){
+        return this.pieceScore;
     }
 
     @Override

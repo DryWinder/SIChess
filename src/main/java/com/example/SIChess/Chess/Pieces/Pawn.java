@@ -6,6 +6,7 @@ import com.example.SIChess.Chess.Color;
 import static java.lang.Math.abs;
 
 public class Pawn extends PieceAbstract{
+    public int pieceScore = 1;
 
     boolean justMovedTwoSquaresForward = false;
     int numberOfSquaresPawnHasMoved = 0;
@@ -17,6 +18,10 @@ public class Pawn extends PieceAbstract{
     private int numberOfSquaresForPawnToPass(){
         if(!hasMoved()){return 2;}
         else {return 1;}
+    }
+
+    public int getScore(){
+        return this.pieceScore;
     }
 
 

@@ -7,6 +7,7 @@ import static java.lang.Math.abs;
 
 
 public class Bishop extends PieceAbstract{
+    public int pieceScore = 3;
 
     public Bishop(Color color, PieceType BISHOP, Square square){
         super(color, BISHOP, square);
@@ -16,6 +17,10 @@ public class Bishop extends PieceAbstract{
     @Override
     public void drawPath(Square startSquare, Square endSquare) {
 
+    }
+
+    public int getScore(){
+        return this.pieceScore;
     }
 
     @Override

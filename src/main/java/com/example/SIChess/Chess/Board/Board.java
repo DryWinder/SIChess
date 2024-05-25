@@ -2,6 +2,10 @@ package com.example.SIChess.Chess.Board;
 
 
 import com.example.SIChess.Chess.Color;
+import com.example.SIChess.Chess.Engine.ControlOfCentralSquares;
+import com.example.SIChess.Chess.Engine.MaterialEvaluator;
+import com.example.SIChess.Chess.Engine.PawnStructureEvaluator;
+import com.example.SIChess.Chess.Engine.ValueOfPieceesOnBoard;
 import com.example.SIChess.Chess.Pieces.*;
 
 import javax.swing.*;
@@ -12,7 +16,6 @@ import java.awt.event.MouseMotionListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.Math.abs;
@@ -72,6 +75,18 @@ public class Board extends JFrame {
     private PieceAbstract newPiece = selectedPiece;
     private int validMovesUnderCheck = 0;
 
+    public int isBot = 0;
+
+    public Square whiteSquare1;
+    public Square blackSquare1;
+    public Square whiteSquare2;
+    public Square blackSquare2;
+    public Square whiteSquare3;
+    public Square blackSquare3;
+    Square whiteSquare;
+    PieceAbstract aiPiece;
+
+
     public Board(){
 
         layeredPane = new JLayeredPane();
@@ -119,9 +134,113 @@ public class Board extends JFrame {
 
         for (PieceAbstract piece : pieces) {
             layeredPane.add(piece, JLayeredPane.DRAG_LAYER);
-            System.out.println(piece.pieceType + " " + piece.getColor());
+            //System.out.println(piece.pieceType + " " + piece.getColor());
         }
     }
+
+    public void whiteSquares(Color color, File file1, File file2, File file3, int row1, int row2, int row3){
+        Square square1 = null;
+        Square square2 = null;
+        Square square3 = null;
+        for(Square square : this.squares){
+            if(square.getFile() == file1 && square.getRow() == row1){
+                square1 = square;
+            }
+            if(square.getFile() == file2 && square.getRow() == row2){
+                square2 = square;
+            }
+            if(square.getFile() == file3 && square.getRow() == row3){
+                square3 = square;
+            }
+        }
+        /*for(PieceAbstract pieceAbstract : this.pieces){
+            if(pieceAbstract.getPieceType() == PieceType.PAWN && pieceAbstract.getActualSquare().getFile().getValue() == whiteSquare1.getFile().getValue() && pieceAbstract.getColor() == Color.WHITE){
+                selectedPiece = pieceAbstract;
+            }
+        }*/
+        //validPath = validPath(selectedPiece);
+        if(color == Color.WHITE){
+            System.out.println("White");
+            whiteSquare1 = square1;
+            whiteSquare2 = square2;
+            whiteSquare3 = square3;
+        }
+        else{
+            System.out.println("Black");
+            blackSquare1 = square1;
+            blackSquare2 = square2;
+        }
+        System.out.println("1: " + square1.getFile() + " " + whiteSquare1.getRow());
+        System.out.println("2: " + square2.getFile() + " " + whiteSquare2.getRow());
+        System.out.println("3: " + square3.getFile() + " " + whiteSquare3.getRow());
+        /*selectedPiece.move(getSquareByCoordinates(whitelondonSquare1.getX(), whitelondonSquare1.getY()));
+        setNewSquareForPiece(whitelondonSquare1.getX(), whitelondonSquare1.getY());
+        finalMove((whitelondonSquare1));*/
+        //selectedPiece = null;
+    }
+
+    public void londonOp(){
+        for(PieceAbstract pieceAbstract : this.pieces){
+            if(pieceAbstract.getColor() == Color.WHITE) {
+                if(numberOfBlackMoves == 0){
+                    if (pieceAbstract.getPieceType() == PieceType.PAWN && pieceAbstract.getActualSquare().getFile().getValue() == whiteSquare1.getFile().getValue() && pieceAbstract.getColor() == Color.WHITE) {
+                        System.out.println(pieceAbstract.getActualSquare().getFile() + " 32 " + pieceAbstract.getActualSquare().getRow());
+                        selectedPiece = pieceAbstract;
+                        aiPiece = pieceAbstract;
+                        whiteSquare = whiteSquare1;
+                    }
+                }
+                if(numberOfBlackMoves == 1){
+                    if (pieceAbstract.getPieceType() == PieceType.KNIGHT && pieceAbstract.getActualSquare().getFile().getValue() == whiteSquare2.getFile().getValue() + 1 && pieceAbstract.getColor() == Color.WHITE) {
+                        System.out.println(pieceAbstract.getActualSquare().getFile() + " 321 " + pieceAbstract.getActualSquare().getRow());
+                        selectedPiece = pieceAbstract;
+                        aiPiece = pieceAbstract;
+                        whiteSquare = whiteSquare2;
+                    }
+                }
+                if(numberOfBlackMoves == 2){
+                    if (pieceAbstract.getPieceType() == PieceType.BISHOP && pieceAbstract.getActualSquare().getFile().getValue() + 3 == whiteSquare3.getFile().getValue() && pieceAbstract.getColor() == Color.WHITE) {
+                        System.out.println(pieceAbstract.getActualSquare().getFile() + " 321 " + pieceAbstract.getActualSquare().getRow());
+                        selectedPiece = pieceAbstract;
+                        aiPiece = pieceAbstract;
+                        whiteSquare = whiteSquare3;
+                    }
+                }
+            }
+        }
+    }
+
+    public void AImove(Square aiSqaure){
+        //validPath = validPath(selectedPiece);
+        /*for(PieceAbstract piece : this.pieces) {
+            piece.setNewSquare(whiteSquare1);
+            selectedPiece = piece;
+            for (Square square : validPath(piece)) {
+                System.out.println("MAZAFAKA");
+                System.out.println(piece.getPieceType() + " " + piece.getColor());
+                System.out.println(selectedPiece.getActualSquare().getFile() + " " + selectedPiece.getActualSquare().getRow());
+
+            }
+        }*/
+        System.out.println("here1");
+        System.out.println(selectedPiece.getActualSquare().getX() + " " + selectedPiece.getActualSquare().getY());
+
+        System.out.println("MAZAFAKA");
+        System.out.println(selectedPiece.getPieceType() + " " + selectedPiece.getColor());
+        selectedPiece.setNewSquare(aiSqaure);
+        validPath = validPath(selectedPiece);
+        for (Square square : validPath) {
+            System.out.println("MAZAFAKA1");
+            System.out.println(selectedPiece.getActualSquare().getFile() + " " + selectedPiece.getActualSquare().getRow());
+
+        }
+
+        //selectedPiece.move(getSquareByCoordinates(whiteSquare1.getX(), whiteSquare1.getY()));
+        //setNewSquareForPiece(whiteSquare1.getX(), whiteSquare1.getY());
+        finalMove((aiSqaure));
+        selectedPiece = null;
+    }
+
 
     public static int getXLocation() {
         return xLocation;
@@ -317,7 +436,16 @@ public class Board extends JFrame {
                 validMovesUnderCheck = 0;
                 piecesThatCheck = new ArrayList<PieceAbstract>();
 
+                if(selectedPiece.getColor() == Color.BLACK && numberOfBlackMoves < 3){
+                    selectedPiece = null;
+                    londonOp();
+
+                    AImove(whiteSquare);
+                }
+
                 selectedPiece = null;
+
+
             }
         });
     }
@@ -929,6 +1057,18 @@ public class Board extends JFrame {
                 whiteMoved = false;
                 this.numberOfBlackMoves += 1;
             }
+            PawnStructureEvaluator pawnStructureEvaluator = new PawnStructureEvaluator(this.pieces, this.squares);
+            pawnStructureEvaluator.evaluatePawnSructure();
+
+            MaterialEvaluator materialEvaluatorWhite = new MaterialEvaluator(this.pieces, this.squares, Color.WHITE);
+            System.out.println("MATERIAL WHITE: " + materialEvaluatorWhite.evaluateMaterialScore());
+
+            MaterialEvaluator materialEvaluatorBlack = new MaterialEvaluator(this.pieces, this.squares, Color.BLACK);
+            System.out.println("MATERIAL BLACK: " + materialEvaluatorBlack.evaluateMaterialScore());
+
+            ControlOfCentralSquares controlOfCentralSquares = new ControlOfCentralSquares(this.pieces, this.squares, selectedPiece.getColor());
+            System.out.println("CENTRE CONTROL: " + controlOfCentralSquares.centreControl());
+
         }
 
     }
@@ -1741,7 +1881,6 @@ public class Board extends JFrame {
     public void drawPieces(Color color, Square square){
         if (square.getRow() == 2 || square.getRow() == 7) {
             Pawn pawn = new Pawn(color, PieceType.PAWN, square);
-            System.out.println(pawn.pieceType + " " + pawn.getColor());
             pieces.add(pawn);
             square.setPiece(pawn);
             square.nowHasPiece();
@@ -1804,7 +1943,17 @@ public class Board extends JFrame {
             }
         }
     }
+
+
+
+
+
+
+
 }
+
+
+
 
 
 
